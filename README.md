@@ -1,3 +1,18 @@
+Note: **I am currently seeking employment as a Data Scientist in the Bay Area!**
+
+-   [trevor.m.murphy@gmail.com](trevor.m.murphy@gmail.com)
+-   [LinkedIn](https://www.linkedin.com/in/trevor-murphy-49ba1421)
+-   [GitHub](https://github.com/tmurph)
+
+# Data Analysis of Health Insurance in Florida
+
+This contains the code and resources for my final project for [Signal Data Science, Spring 2016 Cohort](http://signaldatascience.com/).  
+
+Via [Kaggle](https://www.kaggle.com/hhsgov/health-insurance-marketplace), I study the published health insurance rates made available from the Centers for Medicare and Medicaid Services.  I infer the underlying rating model using linear fixed effects modeling, then I look for drivers of rating variability among public health and demographics data using cross-validated lasso regression.  
+
+Surprisingly, *no* non-trivial correlations are found between insurance rates and any of the available data.  I discuss the practical implications of this null result.
+
+An [appendix](#orgheadline1) at the end contains all my code, with context.  The code is separately available [here (data processing, R)](final-project.R), [here (graphics, R)](final-project-graphics.R), and [here (data processing, SQL)](final-project.sqlite.script).
 
 # Individual Health Insurance Primer
 
@@ -17,7 +32,7 @@ The Centers for Medicare and Medicaid Services (CMS) releases public use files o
 
 While the ultimate sources of the data are CMS and the insurance carriers, Kaggle provides<sup><a id="fnr.2" class="footref" href="#fn.2">2</a></sup> an organized database of all the data as well as supporting code.  It’s quite a lot of data, so I’ll use `SQL` to extract just a subset of the individual pricing information then process the results into an `R` dataframe.  
 
-Here’s the head of the `R` dataframe.  The actual `SQL` and `R` code is provided in the [appendix](#orgheadline1). 
+Here’s the head of the `R` dataframe.  The actual `SQL` and `R` code is provided in the [appendix](#orgheadline2). 
 
 <table align="center" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -165,7 +180,7 @@ effects.df <- levels(df$IssuerName) %>%
     do.call(what=rbind)
 ```
 
-The `effects.df` dataframe needs additional massaging to extract retrodictions of the individual rates, \(R_{ijkl}\), but I’m eliding that here.  Full working code is provided in the [appendix](#orgheadline2).
+The `effects.df` dataframe needs additional massaging to extract retrodictions of the individual rates, \(R_{ijkl}\), but I’m eliding that here.  Full working code is provided in the [appendix](#orgheadline3).
 
 Now let’s see that the fixed effects model does, in fact, accurately describe the data. Here’s a plot of rate data for BCBSFL for a few sampled plans and counties.
 
@@ -208,7 +223,7 @@ The Florida Department of Health tracks<sup><a id="fnr.3" class="footref" href="
 
 The same department also provides<sup><a id="fnr.4" class="footref" href="#fn.4">4</a></sup> demographic data through their FloridaCHARTS program.  For this analysis I pulled demographics as of 2014, the most recent year available without estimation.
 
-As always, full code is provided in the [appendix](#orgheadline3).
+As always, full code is provided in the [appendix](#orgheadline4).
 
 ## Rates for United Healthcare
 
@@ -507,7 +522,7 @@ Yet, when we remove  Union’s cancer incidence, **all regression terms vanish**
 
 ## Conclusion
 
-I will be the first to admit that this null result surprises me so powerfully, I smell a problem with the analysis.  However, I’ve reviewed my assumptions, broken out my intermediate steps, and heeded the advice of the data science experts at [Signal](http://signaldatascience.com/).  Full modeling code is available in the [appendix](#orgheadline4) for all to see.  At this point, I must conclude that the rates of major health insurers simply do not vary in a predictable way with local health profiles.  At least for these two companies in Florida.
+I will be the first to admit that this null result surprises me so powerfully, I smell a problem with the analysis.  However, I’ve reviewed my assumptions, broken out my intermediate steps, and heeded the advice of the data science experts at [Signal](http://signaldatascience.com/).  Full modeling code is available in the [appendix](#orgheadline5) for all to see.  At this point, I must conclude that the rates of major health insurers simply do not vary in a predictable way with local health profiles.  At least for these two companies in Florida.
 
 So what **does** drive the variance in prices?  Well, stay tuned for Part 2, and have a look at this graph in the meantime:
 

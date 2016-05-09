@@ -12,6 +12,21 @@
 #+PROPERTY: header-args:sqlite+ :db health-insurance-marketplace/database.sqlite 
 #+PROPERTY: header-args:latex+ :results drawer :tangle no
 
+Note: *I am currently seeking employment as a Data Scientist in the Bay Area!*
+ - [[mailto:trevor.m.murphy@gmail.com][trevor.m.murphy@gmail.com]]
+ - [[https://www.linkedin.com/in/trevor-murphy-49ba1421][LinkedIn]]
+ - [[https://github.com/tmurph][GitHub]]
+
+* Data Analysis of Health Insurance in Florida
+
+This contains the code and resources for my final project for [[http://signaldatascience.com/][Signal Data Science, Spring 2016 Cohort]].  
+
+Via [[https://www.kaggle.com/hhsgov/health-insurance-marketplace][Kaggle]], I study the published health insurance rates made available from the Centers for Medicare and Medicaid Services.  I infer the underlying rating model using linear fixed effects modeling, then I look for drivers of rating variability among public health and demographics data using cross-validated lasso regression.  
+
+Surprisingly, /no/ non-trivial correlations are found between insurance rates and any of the available data.  I discuss the practical implications of this null result.
+
+An [[*Appendix: Code][appendix]] at the end contains all my code, with context.  The code is separately available [[file:final-project.R][here (data processing, R)]], [[file:final-project-graphics.R][here (graphics, R)]], and [[file:final-project.sqlite.script][here (data processing, SQL)]].
+
 * Individual Health Insurance Primer
 
 To start us off, consider price discrimination.  It’s been the boon of profit-maximizing producers and the bane of hapless consumers everywhere since Econ 101.  You’ll be happy to hear that the practice is explicitly restrained by both state and federal legislation.  Hooray!  
