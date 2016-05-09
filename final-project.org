@@ -756,6 +756,7 @@ Surprisingly to this author, the data tells the same story for BCBSFL.  When we 
 Yet, when we remove  Union’s cancer incidence, *all regression terms vanish*.
 
 # Include this code for reference, but don’t actually export or disply it anywhere.
+#+NAME: bcbsfl-lasso-null
 #+HEADERS: :results replace table :rownames yes :colnames '("Term" "Coefficient") :tangle no
 #+BEGIN_SRC R :exports none
   library(glmnetUtils)
@@ -765,7 +766,6 @@ Yet, when we remove  Union’s cancer incidence, *all regression terms vanish*.
        florida.tracking.summ,
        florida.demo.summ) %>%
       Reduce(f=function(x, y){merge(x, y, by="County")}) %>%
-      ## filter(County != "union") %>%
       (function(data) {
           cancer.cols <- grep("cancer", colnames(data))
           union.row <- grep("union", data$County)
@@ -786,12 +786,12 @@ Yet, when we remove  Union’s cancer incidence, *all regression terms vanish*.
           return(glmnetUtils::cv.glmnet(BCBSFL ~ . - United, data, nfolds=nrow(data)))
       }) %>%
       coef(s="lambda.1se") %>%
-      round(5) %>%
+      round(3) %>%
       deSparseCoef() %>%
       as.matrix()
 #+END_SRC
 
-#+RESULTS:
+#+RESULTS: bcbsfl-lasso-null
 | Term | Coefficient |
 |------+-------------|
 
@@ -922,9 +922,9 @@ And for the second.
 <<united-outlier-2>>
 #+END_SRC
 
-This last snippet I’m simultaneously proud and ashamed to say I wrote.  One long pipeline to calculate the lasso of the normalized data after removing Union County’s cancer incidence rates.  A big shout-out to the [[https://github.com/Hong-Revo/glmnetUtils][glmnetUtils]] package for fitting ~cv.glmnet~ in one line.  The final coefficient matrix is empty.
+This last snippet I’m simultaneously proud and ashamed to say I wrote.  One long pipeline to calculate the lasso of BCBSFL rating factors on the normalized health and demographic data after removing Union County’s cancer incidence rates.  A big shout-out to the [[https://github.com/Hong-Revo/glmnetUtils][glmnetUtils]] package for fitting ~cv.glmnet~ in one line.  The final coefficient matrix is empty.
 
 #+BEGIN_SRC R 
-<<united-lasso-null>>
+<<bcbsfl-lasso-null>>
 #+END_SRC
 

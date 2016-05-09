@@ -897,7 +897,7 @@ ggplot(df.to.graph, aes(x=County, y=United)) +
          x=NULL)
 ```
 
-This last snippet I’m simultaneously proud and ashamed to say I wrote.  One long pipeline to calculate the lasso of the normalized data after removing Union County’s cancer incidence rates.  A big shout-out to the [glmnetUtils](https://github.com/Hong-Revo/glmnetUtils) package for fitting `cv.glmnet` in one line.  The final coefficient matrix is empty.
+This last snippet I’m simultaneously proud and ashamed to say I wrote.  One long pipeline to calculate the lasso of BCBSFL rating factors on the normalized health and demographic data after removing Union County’s cancer incidence rates.  A big shout-out to the [glmnetUtils](https://github.com/Hong-Revo/glmnetUtils) package for fitting `cv.glmnet` in one line.  The final coefficient matrix is empty.
 
 ```R
 library(glmnetUtils)
@@ -924,7 +924,7 @@ list(florida.county.factors,
     scale() %>%
     as.data.frame() %>%
     (function(data) {
-        return(glmnetUtils::cv.glmnet(United ~ . - BCBSFL, data, nfolds=nrow(data)))
+        return(glmnetUtils::cv.glmnet(BCBSFL ~ . - United, data, nfolds=nrow(data)))
     }) %>%
     coef(s="lambda.1se") %>%
     round(3) %>%
