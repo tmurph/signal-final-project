@@ -1,4 +1,4 @@
-Note: **I am currently seeking employment as a Data Scientist in the Bay Area!**
+Note: **I am a Data Scientist in the Bay Area!  Feel free to contact me with questions, comments, offers for work ;)**
 
 -   [trevor.m.murphy@gmail.com](mailto:trevor.m.murphy@gmail.com)
 -   [LinkedIn](https://www.linkedin.com/in/trevor-murphy-49ba1421)
