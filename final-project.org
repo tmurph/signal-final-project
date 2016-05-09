@@ -18,6 +18,9 @@ Note: *I am currently seeking employment as a Data Scientist in the Bay Area!*
  - [[https://github.com/tmurph][GitHub]]
 
 * Data Analysis of Health Insurance in Florida
+:PROPERTIES:
+:CUSTOM_ID: data-analysis-of-health-insurance-in-florida
+:END:
 
 This contains the code and resources for my final project for [[http://signaldatascience.com/][Signal Data Science, Spring 2016 Cohort]].  
 
@@ -28,6 +31,9 @@ Surprisingly, /no/ non-trivial correlations are found between insurance rates an
 An [[*Appendix: Code][appendix]] at the end contains all my code, with context.  The code is separately available [[file:final-project.R][here (data processing, R)]], [[file:final-project-graphics.R][here (graphics, R)]], and [[file:final-project.sqlite.script][here (data processing, SQL)]].
 
 * Individual Health Insurance Primer
+:PROPERTIES:
+:CUSTOM_ID: individual-health-insurance-primer
+:END:
 
 To start us off, consider price discrimination.  It’s been the boon of profit-maximizing producers and the bane of hapless consumers everywhere since Econ 101.  You’ll be happy to hear that the practice is explicitly restrained by both state and federal legislation.  Hooray!  
 
@@ -40,10 +46,16 @@ To investigate this question empirically, let’s analyze the public pricing inf
 [fn:1] Most of the relevant developments grew out of life insurance.  In that industry, price regulations came about to protect insurance companies /from themselves/.  Economic forces like asymmetric information and cumulative anti-selection will bankrupt price-discriminating insurers of individuals, though the financial reaper arrives years after the seeds have been sown.  Consumers demanded regulatory oversight when bankruptcies happened in the past, and legislatures responded with precisely the restrictions we see.
 
 * Data and Analysis
+:PROPERTIES:
+:CUSTOM_ID: data-and-analysis
+:END:
 
 The Centers for Medicare and Medicaid Services (CMS) releases public use files of health insurance benefits and rates for many states and plans.  Out of fondness for a former employer, I’ll compare Blue Cross Blue Shield of Florida (BCBSFL) with a competitor, UnitedHealthcare (United).
 
 ** Health Insurance Rates from Kaggle
+:PROPERTIES:
+:CUSTOM_ID: health-insurance-rates-from-kaggle
+:END:
 
 While the ultimate sources of the data are CMS and the insurance carriers, Kaggle provides[fn:2] an organized database of all the data as well as supporting code.  It’s quite a lot of data, so I’ll use =SQL= to extract just a subset of the individual pricing information then process the results into an =R= dataframe.  
 
@@ -157,6 +169,9 @@ Here’s the head of the =R= dataframe.  The actual =SQL= and =R= code is provid
 [fn:2] https://www.kaggle.com/hhsgov/health-insurance-marketplace
 
 ** Rate Data Model
+:PROPERTIES:
+:CUSTOM_ID: rate-data-model
+:END:
 
 Actuaries may model insurance rates as a product of various factors, with each factor determined by analysis of company data.  A typical formula for the rate $R_{ijkl}$ of plan $P_i$ in county $C_j$ for subscribers age $A_k$ on insurance carrier $I_l$ might look like this.
 
@@ -319,6 +334,9 @@ What, a perfect fit?!  That’s actually expected, because there is no underlyin
 With that out of the way, for the remainder of this analysis I’ll focus explicitly on the county effects.
 
 ** Baseline Analysis
+:PROPERTIES:
+:CUSTOM_ID: baseline-analysis
+:END:
 
 If market and regulatory forces drove major carriers to adopt similar pricing strategies across the state, then we would expect to see strong correlations between the carriers' county effects.  As a quick sanity check let’s fit a linear model of United factors on BCBSFL factors.
 
@@ -382,6 +400,9 @@ Voilà!  The two sets of effects do correlate a bit, but with plenty of variatio
 To understand that remaining variation, let’s pull down Floridian public health data by county and fit regularized linear models for each set of factors.  I’ll use $l_1$ / lasso regularization, because in each case I want to isolate those few data variables that are most strongly predictive of the rating factors.
 
 ** Public Health Data
+:PROPERTIES:
+:CUSTOM_ID: public-health-data
+:END:
 
 The Florida Department of Health tracks[fn:3] health and environmental data by county for many diseases, conditions, and health-related metrics.  For this analysis I pulled as much as I could:
  - age-adjusted cancer incidence from 2002 through 2011 for many cancers 
@@ -530,6 +551,9 @@ As always, full code is provided in the [[*Pulling Data from Dept of Health][app
 [fn:4] http://www.floridacharts.com/flquery/population/populationrpt.aspx
 
 ** Rates for United Healthcare
+:PROPERTIES:
+:CUSTOM_ID: rates-for-united-healthcare
+:END:
 
 The following code uses the ~glmnet~ library to fit a cross-validated lasso regression of United rating factors on all available public health data.  A table of non-zero regression coefficients immediately follows the code.
 
@@ -668,6 +692,9 @@ Again, I’ve highlighted Union county as a clear outlier.
 As a matter of fact, when we drop Union’s cancer incidence from the data and re-run the lasso [[united-lasso][above]], /no regression terms remain/.  I conclude that there is not much predictive power to be found in the available health and demographic factors, and that [[united-lasso-table][Table 1]] shows spurious correlations driven by Union County.
 
 ** Rates for Blue Cross Blue Shield of Florida
+:PROPERTIES:
+:CUSTOM_ID: rates-for-blue-cross-blue-shield-of-florida
+:END:
 
 Wait for it…
 
@@ -771,6 +798,9 @@ Yet, when we remove  Union’s cancer incidence, *all regression terms vanish*.
 |------+-------------|
 
 ** Conclusion
+:PROPERTIES:
+:CUSTOM_ID: conclusion
+:END:
 
 I will be the first to admit that this null result surprises me so powerfully, I smell a problem with the analysis.  However, I’ve reviewed my assumptions, broken out my intermediate steps, and heeded the advice of the data science experts at [[http://signaldatascience.com/][Signal]].  Full modeling code is available in the [[*Modeling Relativities with the Lasso][appendix]] for all to see.  At this point, I must conclude that the rates of major health insurers simply do not vary in a predictable way with local health profiles.  At least for these two companies in Florida.
 
@@ -816,8 +846,12 @@ So what *does* drive the variance in prices?  Well, stay tuned for Part 2, and h
 :header-args:R+: :tangle no
 :header-args:sqlite+: :tangle no
 :header-args:latex+: :tangle no
+:CUSTOM_ID: appendix-code
 :END:
 ** Pulling Data from Kaggle
+:PROPERTIES:
+:CUSTOM_ID: pulling-data-from-kaggle
+:END:
 
 The Kaggle datasets[fn:2] are huge; this =SQL= grabs just the rows we want.  It takes a while to run on my laptop, so I save the results to csv.
 
@@ -832,6 +866,9 @@ And now with a little =R= we’re ready to analyze the data.  Note that the code
 #+END_SRC
 
 ** Fitting the Models
+:PROPERTIES:
+:CUSTOM_ID: fitting-the-models
+:END:
 
 The following code extracts the plan, county, and age effects for each of the ten insurance issuers in Florida and builds a dataframe of the results.
 
@@ -846,6 +883,9 @@ From these results, we construct retrodictions of the individual rate at the pla
 #+END_SRC
 
 ** Pulling Data from Dept of Health
+:PROPERTIES:
+:CUSTOM_ID: pulling-data-from-dept-of-health
+:END:
 
 The Florida Department of Health datasets[fn:3][fn:4] come in Excel spreadsheet format.  Downloaded files were exported to csv and given standardized names.  Sorry there’s no script for this part.
 
@@ -860,6 +900,9 @@ The Florida Department of Health datasets[fn:3][fn:4] come in Excel spreadsheet 
 #+END_SRC
 
 ** Modeling Relativities with the Lasso
+:PROPERTIES:
+:CUSTOM_ID: modeling-relativities-with-the-lasso
+:END:
 
 This code to fit a cross-validated lasso regression was given [[united-lasso][above]].  This time I’ve also included the lines to massage the output for presentation.
 

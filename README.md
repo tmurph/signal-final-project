@@ -12,7 +12,7 @@ Via [Kaggle](https://www.kaggle.com/hhsgov/health-insurance-marketplace), I stud
 
 Surprisingly, *no* non-trivial correlations are found between insurance rates and any of the available data.  I discuss the practical implications of this null result.
 
-An [appendix](#orgheadline1) at the end contains all my code, with context.  The code is separately available [here (data processing, R)](final-project.R), [here (graphics, R)](final-project-graphics.R), and [here (data processing, SQL)](final-project.sqlite.script).
+An [appendix](#appendix-code) at the end contains all my code, with context.  The code is separately available [here (data processing, R)](final-project.R), [here (graphics, R)](final-project-graphics.R), and [here (data processing, SQL)](final-project.sqlite.script).
 
 # Individual Health Insurance Primer
 
@@ -32,7 +32,7 @@ The Centers for Medicare and Medicaid Services (CMS) releases public use files o
 
 While the ultimate sources of the data are CMS and the insurance carriers, Kaggle provides<sup><a id="fnr.2" class="footref" href="#fn.2">2</a></sup> an organized database of all the data as well as supporting code.  It’s quite a lot of data, so I’ll use `SQL` to extract just a subset of the individual pricing information then process the results into an `R` dataframe.  
 
-Here’s the head of the `R` dataframe.  The actual `SQL` and `R` code is provided in the [appendix](#orgheadline2). 
+Here’s the head of the `R` dataframe.  The actual `SQL` and `R` code is provided in the [appendix](#pulling-data-from-kaggle). 
 
 <table align="center" border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -184,7 +184,7 @@ effects.df <- levels(df$IssuerName) %>%
     do.call(what=rbind)
 ```
 
-The `effects.df` dataframe needs additional massaging to extract retrodictions of the individual rates, <img src="ltxpng/final-project_d06b6186c884bce86dcb341a6d3f844a83adcf19.png" alt="$R_{ijkl}$" />, but I’m eliding that here.  Full working code is provided in the [appendix](#orgheadline3).
+The `effects.df` dataframe needs additional massaging to extract retrodictions of the individual rates, <img src="ltxpng/final-project_d06b6186c884bce86dcb341a6d3f844a83adcf19.png" alt="$R_{ijkl}$" />, but I’m eliding that here.  Full working code is provided in the [appendix](#fitting-the-models).
 
 Now let’s see that the fixed effects model does, in fact, accurately describe the data. Here’s a plot of rate data for BCBSFL for a few sampled plans and counties.
 
@@ -227,7 +227,7 @@ The Florida Department of Health tracks<sup><a id="fnr.3" class="footref" href="
 
 The same department also provides<sup><a id="fnr.4" class="footref" href="#fn.4">4</a></sup> demographic data through their FloridaCHARTS program.  For this analysis I pulled demographics as of 2014, the most recent year available without estimation.
 
-As always, full code is provided in the [appendix](#orgheadline4).
+As always, full code is provided in the [appendix](#pulling-data-from-dept-of-health).
 
 ## Rates for United Healthcare
 
@@ -526,7 +526,7 @@ Yet, when we remove  Union’s cancer incidence, **all regression terms vanish**
 
 ## Conclusion
 
-I will be the first to admit that this null result surprises me so powerfully, I smell a problem with the analysis.  However, I’ve reviewed my assumptions, broken out my intermediate steps, and heeded the advice of the data science experts at [Signal](http://signaldatascience.com/).  Full modeling code is available in the [appendix](#orgheadline5) for all to see.  At this point, I must conclude that the rates of major health insurers simply do not vary in a predictable way with local health profiles.  At least for these two companies in Florida.
+I will be the first to admit that this null result surprises me so powerfully, I smell a problem with the analysis.  However, I’ve reviewed my assumptions, broken out my intermediate steps, and heeded the advice of the data science experts at [Signal](http://signaldatascience.com/).  Full modeling code is available in the [appendix](#modeling-relativities-with-the-lasso) for all to see.  At this point, I must conclude that the rates of major health insurers simply do not vary in a predictable way with local health profiles.  At least for these two companies in Florida.
 
 So what **does** drive the variance in prices?  Well, stay tuned for Part 2, and have a look at this graph in the meantime:
 
