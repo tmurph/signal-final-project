@@ -8,7 +8,7 @@
 #+PROPERTY: header-args :noweb yes :exports results
 #+PROPERTY: header-args:R+ :session *R* :results none :tangle final-project.R
 #+PROPERTY: header-args:R+ :width 800 :res 100
-#+PROPERTY: header-args:sqlite+ :eval never :tangle final-project.sqlite
+#+PROPERTY: header-args:sqlite+ :eval never :tangle final-project.sqlite.script
 #+PROPERTY: header-args:sqlite+ :db health-insurance-marketplace/database.sqlite 
 #+PROPERTY: header-args:latex+ :results drawer :tangle no
 

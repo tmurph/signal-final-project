@@ -1,0 +1,35 @@
+-- The open enrollment period for individual insurance spans several months,
+-- but nevertheless all rates are "effective" as of January 1.
+with filtered_rate as (
+    select *
+    from Rate
+    where
+        RateEffectiveDate = "2016-01-01"
+        and StateCode = "FL"
+)
+
+-- There's too much data available on individual plans offered through the
+-- health exchange, so we'll restrict to just the so-called "Silver" plans.
+
+-- By law, plans are rated "Bronze", "Silver", "Gold", or "Platinum" to
+-- (roughly) characterize the level of insurance coverage the plan provides.
+-- Silver plans have become a go-to level for intra-company comparisons.
+, filtered_plan as (
+    select *
+    from PlanAttributes
+    where
+        MetalLevel = "Silver"
+        and MarketCoverage = "Individual"
+        and CSRVariationType like "%On Exchange%"
+)
+
+select
+    r.*
+from
+    filtered_rate r
+inner join
+    filtered_plan p
+on
+    r.PlanId = p.StandardComponentId
+    and r.BusinessYear = p.BusinessYear
+;
