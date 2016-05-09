@@ -1,0 +1,874 @@
+#+TITLE: Signal Data Science Spring 2016
+#+TITLE: Health Insurance in Florida
+#+AUTHOR: Trevor Murphy
+#+EMAIL: trevor.m.murphy@gmail.com
+
+#+OPTIONS: num:nil toc:nil tasks:nil
+
+#+PROPERTY: header-args :noweb yes :exports results
+#+PROPERTY: header-args:R+ :session *R* :results none :tangle final-project.R
+#+PROPERTY: header-args:R+ :width 800 :res 100
+#+PROPERTY: header-args:sqlite+ :eval never :tangle final-project.sqlite
+#+PROPERTY: header-args:sqlite+ :db health-insurance-marketplace/database.sqlite 
+#+PROPERTY: header-args:latex+ :results drawer :tangle no
+
+* Individual Health Insurance Primer
+
+To start us off, consider price discrimination.  It’s been the boon of profit-maximizing producers and the bane of hapless consumers everywhere since Econ 101.  You’ll be happy to hear that the practice is explicitly restrained by both state and federal legislation.  Hooray!  
+
+“Hooray!  Because health insurance should be affordable to all!” I hear the voices cry—and they’re right!  Historically speaking, though, demands for regulation came from very different voices.[fn:1]  Regardless, we now live in a world where insurance companies do not price according to textbook theories.
+
+Given that background, how do insurers actually set their prices?
+
+To investigate this question empirically, let’s analyze the public pricing information of Florida's two largest health insurance carriers in conjunction with publicly available health and demographic information.  Given the weakness of most Econ 101 assumptions in the health insurance market, we should expect different carriers’ pricing strategies will correlate weakly, or not at all.
+
+[fn:1] Most of the relevant developments grew out of life insurance.  In that industry, price regulations came about to protect insurance companies /from themselves/.  Economic forces like asymmetric information and cumulative anti-selection will bankrupt price-discriminating insurers of individuals, though the financial reaper arrives years after the seeds have been sown.  Consumers demanded regulatory oversight when bankruptcies happened in the past, and legislatures responded with precisely the restrictions we see.
+
+* Data and Analysis
+
+The Centers for Medicare and Medicaid Services (CMS) releases public use files of health insurance benefits and rates for many states and plans.  Out of fondness for a former employer, I’ll compare Blue Cross Blue Shield of Florida (BCBSFL) with a competitor, UnitedHealthcare (United).
+
+** Health Insurance Rates from Kaggle
+
+While the ultimate sources of the data are CMS and the insurance carriers, Kaggle provides[fn:2] an organized database of all the data as well as supporting code.  It’s quite a lot of data, so I’ll use =SQL= to extract just a subset of the individual pricing information then process the results into an =R= dataframe.  
+
+#+NAME: get-rate-data
+#+BEGIN_SRC sqlite :file rate-data.csv
+  -- The open enrollment period for individual insurance spans several months,
+  -- but nevertheless all rates are "effective" as of January 1.
+  with filtered_rate as (
+      select *
+      from Rate
+      where
+          RateEffectiveDate = "2016-01-01"
+          and StateCode = "FL"
+  )
+
+  -- There's too much data available on individual plans offered through the
+  -- health exchange, so we'll restrict to just the so-called "Silver" plans.
+
+  -- By law, plans are rated "Bronze", "Silver", "Gold", or "Platinum" to
+  -- (roughly) characterize the level of insurance coverage the plan provides.
+  -- Silver plans have become a go-to level for intra-company comparisons.
+  , filtered_plan as (
+      select *
+      from PlanAttributes
+      where
+          MetalLevel = "Silver"
+          and MarketCoverage = "Individual"
+          and CSRVariationType like "%On Exchange%"
+  )
+
+  select
+      r.*
+  from
+      filtered_rate r
+  inner join
+      filtered_plan p
+  on
+      r.PlanId = p.StandardComponentId
+      and r.BusinessYear = p.BusinessYear
+  ;
+#+END_SRC
+
+#+NAME: read-rate-data
+#+HEADERS: :var sql_results_file="rate-data.csv"
+#+BEGIN_SRC R 
+  library(readr)
+  library(dplyr)
+
+
+  ## The rate data includes many fields we don't need for this analysis.
+  ## Select just the rates by plan, county, age, and issuer.
+  df <- read_csv(sql_results_file) %>%
+      select(c(IndividualRate,                                 
+               PlanId,                        
+               RatingAreaId,                                   
+               Age,                                      
+               IssuerId))
+
+  ## The Age information comes to us with some non-numeric strings.
+  ## This gives us an equivalent numeric field, AgeNum, for later plotting.
+  df$AgeNum <- df$Age %>%
+      sapply(FUN=function(.x) {
+          switch(.x,
+                 "0-20"="20",
+                 "65 and over"="65",
+                 .x)   
+      }) %>%
+      as.numeric
+
+  ## Issuer information comes to us as a federally-assigned ID number.
+  ## This gives us the issuer names and mnemonics to work with instead.
+  df$IssuerName <- df$IssuerId %>%
+      as.character %>%
+      sapply(FUN=function(.id) {
+          switch(.id,
+                 "16842"="BCBSFL",
+                 "68398"="United",
+                 "30252"="FB.HMO",
+                 "21663"="Celtic",
+                 "56503"="FHCP",
+                 "27357"="Health.First",
+                 "35783"="Humana",
+                 "57451"="Coventry",
+                 "54172"="Molina",
+                 "18628"="Aetna")
+      })
+
+  ## Most variables should be treated as factors.
+  for (var in c("PlanId", "RatingAreaId", "IssuerId", "IssuerName", "Age")) {
+      df[[var]] <- factor(df[[var]])
+  }
+#+END_SRC
+
+Here’s the head of the =R= dataframe.  The actual =SQL= and =R= code is provided in the [[*Pulling Data from Kaggle][appendix]]. 
+
+#+HEADERS: :results replace table :rownames yes :colnames yes :tangle no
+#+BEGIN_SRC R 
+  head(df)
+#+END_SRC
+
+#+RESULTS:
+|   | IndividualRate | PlanId         | RatingAreaId  |  Age | IssuerId | AgeNum | IssuerName |
+|---+----------------+----------------+---------------+------+----------+--------+------------|
+| 1 |         188.73 | 16842FL0070073 | Rating Area 1 | 0-20 |    16842 |     20 | BCBSFL     |
+| 2 |         297.21 | 16842FL0070073 | Rating Area 1 |   21 |    16842 |     21 | BCBSFL     |
+| 3 |         297.21 | 16842FL0070073 | Rating Area 1 |   22 |    16842 |     22 | BCBSFL     |
+| 4 |         297.21 | 16842FL0070073 | Rating Area 1 |   23 |    16842 |     23 | BCBSFL     |
+| 5 |         297.21 | 16842FL0070073 | Rating Area 1 |   24 |    16842 |     24 | BCBSFL     |
+| 6 |          298.4 | 16842FL0070073 | Rating Area 1 |   25 |    16842 |     25 | BCBSFL     |
+
+[fn:2] https://www.kaggle.com/hhsgov/health-insurance-marketplace
+
+** Rate Data Model
+
+Actuaries may model insurance rates as a product of various factors, with each factor determined by analysis of company data.  A typical formula for the rate $R_{ijkl}$ of plan $P_i$ in county $C_j$ for subscribers age $A_k$ on insurance carrier $I_l$ might look like this.
+
+#+BEGIN_SRC latex
+  \begin{equation}
+    \begin{split}
+      R_{ijkl} = & PlanFactor_i * \\
+      & CountyFactor_j * \\
+      & AgeFactor_k * \\
+      & BaseRate_l * TobaccoLoad_l * ProfitLoad_l
+    \end{split}
+  \end{equation}
+#+END_SRC
+
+#+NAME: actuarial-rating-formula
+#+RESULTS:
+:RESULTS:
+\begin{equation}
+  \begin{split}
+    R_{ijkl} = & PlanFactor_i * \\
+    & CountyFactor_j * \\
+    & AgeFactor_k * \\
+    & BaseRate_l * TobaccoLoad_l * ProfitLoad_l
+  \end{split}
+\end{equation}
+:END:
+
+After taking logs of both sides, $log(R_{ijkl})$ is expressed as the sum of fixed effects by plan, county, subscriber age, and insurance carrier.  For each insurance carrier we’ll fit such a model with the ~lfe~ package.  Here’s the relevant code.
+
+#+NAME: fit-models
+#+BEGIN_SRC R :exports code
+  library(lfe)
+
+  ## In the language of the lfe package, the "|" symbol separates
+  ## regressors (on the left) from fixed effect groupings (on the right).
+
+  ## For this model, log(Rate) is modeled entirely as a sum of fixed effects,
+  ## with no non-trivial regression terms.
+  model.formula <- log(IndividualRate) ~ 1 | PlanId + RatingAreaId + Age
+
+  ## Loop with lapply / combine with rbind.
+  effects.df <- levels(df$IssuerName) %>% 
+      lapply(function(name) {
+          df %>%
+              filter(IssuerName == name) %>%
+              felm(formula=model.formula) %>%
+              getfe() %>%
+              select(fe, idx, effect) %>%
+              mutate(issuer=name) %>%
+              return()
+      }) %>%
+      do.call(what=rbind)
+#+END_SRC
+
+The ~effects.df~ dataframe needs additional massaging to extract retrodictions of the individual rates, $R_{ijkl}$, but I’m eliding that here.  Full working code is provided in the [[*Fitting the Models][appendix]].
+
+#+NAME: build-predictions
+#+BEGIN_SRC R 
+  ## To build a prediction for each issuer's rating observation, we need to sum
+  ## the modeled effects and exponentiate the result.
+
+  ## The effects.df comes in "tidy" or "long" form, but we need to transform it
+  ## to a "messy" or "wide" form to calculate the exponentiated sum.
+
+  ## Split effects.df on the fixed effect groups and join the results together.
+  wide.effects.df <- levels(effects.df$fe) %>%
+      lapply(FUN=function(effect.group) {
+          filter(effects.df, fe == effect.group)
+      }) %>%
+      Reduce(f=function(x, y){merge(x, y, by="issuer")})
+
+  ## Horizontally aggregate the indices and effects.
+  agg.indices <- wide.effects.df %>%
+      select(issuer, starts_with("idx")) %>%
+      c(sep=".") %>%
+      do.call(what=paste)
+  agg.effects <- wide.effects.df %>%
+      select(starts_with("effect")) %>%
+      rowSums() %>%
+      exp()
+  agg.df <- data.frame(index=agg.indices,
+                       ModeledRate=agg.effects,
+                       stringsAsFactors=F)
+
+  ## Create an equivalent index in the original data frame.
+  df2 <- df
+  df2$index <- df2 %>%
+      select(IssuerName, Age, PlanId, RatingAreaId) %>%
+      c(sep=".") %>%
+      do.call(what=paste)
+
+  ## Join the two together.
+  data.with.predict <- left_join(df2, agg.df, by="index") %>%
+      select(-c(index))
+#+END_SRC
+
+Now let’s see that the fixed effects model does, in fact, accurately describe the data. Here’s a plot of rate data for BCBSFL for a few sampled plans and counties.
+
+#+HEADERS: :var side.length=2
+#+HEADERS: :results replace graphics :rownames no :colnames no :tangle final-project-graphics.R
+#+BEGIN_SRC R :file bcbsfl-feffects-check.png
+  bcbsfl.with.predict <- filter(data.with.predict, IssuerName == "BCBSFL")
+
+  some.areas <- bcbsfl.with.predict$RatingAreaId %>%
+      unique() %>%
+      sample(side.length)
+  some.plans <- bcbsfl.with.predict$PlanId %>%
+      unique() %>%
+      sample(side.length)
+
+  df.to.graph <- bcbsfl.with.predict %>%
+      filter(RatingAreaId %in% some.areas, PlanId %in% some.plans)
+
+  while ((length(unique(df.to.graph$RatingAreaId)) != side.length) ||
+         (length(unique(df.to.graph$PlanId)) != side.length)) {
+
+      ## yay, copy-paste 
+      some.areas <- bcbsfl.with.predict$RatingAreaId %>%
+          unique() %>%
+          sample(side.length)
+      some.plans <- bcbsfl.with.predict$PlanId %>%
+          unique() %>%
+          sample(side.length)
+
+      df.to.graph <- bcbsfl.with.predict %>%
+          filter(RatingAreaId %in% some.areas, PlanId %in% some.plans)
+
+  }
+
+
+  library(ggplot2)
+  library(reshape2)
+  library(wesanderson)
+
+
+  df.to.graph <- melt(df.to.graph, measure.vars=c("IndividualRate", "ModeledRate"))
+  graph.colors <- wes_palette("Royal1", 2)
+
+  ggplot(df.to.graph, aes(x=AgeNum, y=value, color=variable, fill=variable)) +
+      facet_grid(RatingAreaId ~ PlanId) +
+      geom_bar(stat="identity", data=filter(df.to.graph, variable == "IndividualRate"),
+               width=0.5) +
+      geom_point(data=filter(df.to.graph, variable == "ModeledRate"),
+                 size=1) +
+      labs(title="Sample Individual Rates for BCBSFL Plans and Counties",
+           x="Member Age", y="Individual Rate") +
+      scale_color_manual(values=graph.colors,
+                         labels=c("Published Rates", "Modeled Rates"),
+                         name=NULL) +
+      scale_fill_manual(values=c(graph.colors[1], "white"),
+                        labels=c("Published Rates", "Modeled Rates"),
+                        name=NULL)
+#+END_SRC
+
+#+RESULTS:
+[[file:bcbsfl-feffects-check.png]]
+
+What, a perfect fit?!  That’s actually expected, because there is no underlying uncertainty in the process that generated these published rates.  They were produced by humans following the simple [[actuarial-rating-formula][Formula 1]] above, so this plot demonstrates that we have accurately inferred the unpublished factors (the right hand side of the formula) from the published rates (the left hand side).
+
+With that out of the way, for the remainder of this analysis I’ll focus explicitly on the county effects.
+
+** Baseline Analysis
+
+If market and regulatory forces drove major carriers to adopt similar pricing strategies across the state, then we would expect to see strong correlations between the carriers' county effects.  As a quick sanity check let’s fit a linear model of United factors on BCBSFL factors.
+
+#+NAME: get-rating-factors
+#+HEADERS: :var rating_area_file="govt-rating-areas.csv"
+#+BEGIN_SRC R 
+  library(reshape2)
+
+  ## The csv referenced in this code contains the federally specified mapping of
+  ## rating area numbers to county names.  The mapping's available online.
+  florida.county.factors <- effects.df %>%
+      filter(fe == "RatingAreaId") %>%
+      dcast(idx ~ issuer, value.var="effect") %>%
+      merge(y=read_csv(rating_area_file),
+            by.x="idx", by.y="Rating Area ID", all=T)
+
+  ## All counties are (by construction) spelled canonically in this data.
+  ## Just convert to lowercase.
+  florida.county.factors$County <- florida.county.factors$County %>%
+      tolower()
+#+END_SRC
+
+# This code has to go in its own block to prevent ugly R output
+#+BEGIN_SRC R :tangle no
+  library(arm)
+
+  ## god dammit, MASS library, redefining select
+  select <- dplyr::select
+#+END_SRC
+
+#+HEADERS: :results replace output :rownames no :colnames no :tangle no
+#+BEGIN_SRC R 
+  display(lm(scale(United) ~ scale(BCBSFL), florida.county.factors))
+#+END_SRC
+
+#+RESULTS:
+: lm(formula = scale(United) ~ scale(BCBSFL), data = florida.county.factors)
+:               coef.est coef.se
+: (Intercept)   0.00     0.11   
+: scale(BCBSFL) 0.36     0.12   
+: ---
+: n = 67, k = 2
+: residual sd = 0.94, R-Squared = 0.13
+
+The estimated coefficient is significant at the 0.01 level, so it’s unlikely that there’s literally no underlying correlation between the rating factors.  That said, any such correlation points to a weak effect, since the model only explains 13% of the variation of United’s rating factors.
+
+We can also see this result graphically.
+
+#+HEADERS: :results replace graphics :rownames no :colnames no :tangle final-project-graphics.R
+#+BEGIN_SRC R :file sanity-check.png
+  ggplot(florida.county.factors, aes(x=scale(BCBSFL), y=scale(United))) +
+      geom_point() + geom_smooth(method="lm") +
+      ggtitle("Linear Regression of County Factors, United on BCBSFL")
+#+END_SRC
+
+#+RESULTS:
+[[file:sanity-check.png]]
+
+Voilà!  The two sets of effects do correlate a bit, but with plenty of variation left to explain.  In particular, careful observation indicates that United factors cluster around the mean with three outliers, while BCBSFL factors show more dispersion.
+
+To understand that remaining variation, let’s pull down Floridian public health data by county and fit regularized linear models for each set of factors.  I’ll use $l_1$ / lasso regularization, because in each case I want to isolate those few data variables that are most strongly predictive of the rating factors.
+
+** Public Health Data
+
+The Florida Department of Health tracks[fn:3] health and environmental data by county for many diseases, conditions, and health-related metrics.  For this analysis I pulled as much as I could:
+ - age-adjusted cancer incidence from 2002 through 2011 for many cancers 
+ - incidence of premature births and low-weight births from 2005 through 2014
+ - available health metrics such as rates of heart attack, obesity, and smoking
+ - other relevant factors such as rates of poverty, incidence of enteric disease outbreaks, and self-reported health status
+
+#+NAME: get-tracking-data   
+#+BEGIN_SRC R
+  ## All files were downloaded from the Florida Department of Health's
+  ## Environmental Public Health Tracking website:
+  ## http://www.floridatracking.com/HealthTrackFL/default.aspx
+
+  florida.tracking.files <- c("fl-track-birth-low-weight.csv",
+                              "fl-track-birth-preterm.csv",
+                              "fl-track-birth-very-low-weight.csv",
+                              "fl-track-birth-very-preterm.csv",
+                              "fl-track-cancer-bladder.csv",
+                              "fl-track-cancer-brain.csv",
+                              "fl-track-cancer-breast49.csv",
+                              "fl-track-cancer-breast50.csv",
+                              "fl-track-cancer-kidney.csv",
+                              "fl-track-cancer-leukemia.csv",
+                              "fl-track-cancer-liver.csv",
+                              "fl-track-cancer-lung.csv",
+                              "fl-track-cancer-lymphoma.csv",
+                              "fl-track-cancer-melanoma.csv",
+                              "fl-track-cancer-mesothelioma.csv",
+                              "fl-track-cancer-pancreas.csv",
+                              "fl-track-cancer-thyroid.csv",
+                              "fl-track-ecoli.csv",
+                              "fl-track-heart-er.csv",
+                              "fl-track-heart-hosp.csv",
+                              "fl-track-obesity.csv",
+                              "fl-track-poverty5.csv",
+                              "fl-track-poverty65.csv",
+                              "fl-track-salmonella.csv",
+                              "fl-track-self-report.csv",
+                              "fl-track-smoke2.csv")
+
+  ## Give the data frames meaningful names.
+  florida.tracking.data <- Map(florida.tracking.files,
+                               f=function(file) {
+                                   return(read_csv(file, na=c("", "NA", "*")))
+                               })
+  names(florida.tracking.data) <- florida.tracking.files %>%
+      gsub(pattern="^fl-track-", replacement="") %>%
+      gsub(pattern=".csv$", replacement="") %>%
+      gsub(pattern="-", replacement=".")
+
+  ## Merge all the frames together, by county.
+  florida.tracking.summ <- names(florida.tracking.data) %>%
+      lapply(FUN=function(nam) {
+          dat <- florida.tracking.data[[nam]]
+          names(dat) <- names(dat) %>%
+              sub(pattern="([[:digit:]]+)",
+                  replacement=paste0(nam, ".", "\\1"))
+          return(dat)
+      }) %>%
+      Reduce(f=function(x, y){return(merge(x, y, by="County"))}) %>%
+      filter(County != "Florida")
+
+  ## By coincidence, all counties are spelled canonically in this data.
+  ## Just convert to lowercase.
+  florida.tracking.summ$County <- florida.tracking.summ$County %>%
+      tolower()
+#+END_SRC
+
+The same department also provides[fn:4] demographic data through their FloridaCHARTS program.  For this analysis I pulled demographics as of 2014, the most recent year available without estimation.
+
+#+NAME: get-demo-data
+#+BEGIN_SRC R
+  ## All files were downloaded from the Florida Department of Health's
+  ## FloridaCHARTS website:
+  ## http://www.floridacharts.com/flquery/population/populationrpt.aspx
+
+  florida.demo.files <- c("fl-demo-population.csv",
+                          "fl-demo-pop-age.csv",
+                          "fl-demo-pop-sex.csv",
+                          "fl-demo-pop-race.csv",
+                          "fl-demo-pop-ethnic.csv")
+
+  ## Give the data frames meaningful names.
+  florida.demo.data <- Map(florida.demo.files,
+                           f=function(file) {
+                               return(read_csv(file, na=c("", "NA", "*")))
+                           })
+  names(florida.demo.data) <- florida.demo.files %>%
+      gsub(pattern="^fl-demo-", replacement="") %>%
+      gsub(pattern=".csv$", replacement="") %>%
+      gsub(pattern="-", replacement=".")
+
+  ## Merge all the frames together by county.
+  florida.demo.summ <- names(florida.demo.data) %>%
+      lapply(FUN=function(nam) {
+          dat <- florida.demo.data[[nam]]
+          names(dat) <- names(dat) %>%
+              sub(pattern="^", replacement="pop.2014.") %>%
+              sub(pattern="pop.2014.County", replacement="County")
+          return(dat)
+      }) %>%
+      Reduce(f=function(x, y){return(merge(x, y, by="County"))})
+
+  ## Some counties are spelled multiple ways "in the wild".
+  ## Switch to canonical names.
+  florida.demo.summ$County <- florida.demo.summ$County %>%
+      tolower() %>%
+      lapply(FUN=function(cnty){
+          return(switch(cnty,
+                        "saint johns"="st. johns",
+                        "saint lucie"="st. lucie",
+                        cnty))
+      }) %>%
+      as.character()
+#+END_SRC
+
+#+NAME: normalize-data
+#+BEGIN_SRC R 
+  library(caret)
+
+
+  ## Properly normalized data has had the following transformations applied:
+  ## - BoxCox, which requires a shift to make all values strictly positive
+  ## - Imputation of NA entries (we're imputing to the mean)
+  ## - Rescaling to mean 0 and sd 1
+  normalized.data <- list(florida.county.factors,
+                          florida.tracking.summ,
+                          florida.demo.summ) %>%
+      Reduce(f=function(x, y){merge(x, y, by="County")}) %>%
+      select(BCBSFL, United, matches("[[:digit:]]{4}")) %>%
+      lapply(FUN=function(col) {
+          tmp <- col + min(0, col, na.rm=TRUE) + sd(col, na.rm=TRUE) / 10
+          ret <- BoxCoxTrans(tmp, na.rm=TRUE) %>% predict(tmp)
+          ret[is.na(ret)] <- mean(ret, na.rm=TRUE)
+          return(ret)
+      }) %>%
+      data.frame() %>%
+      scale() %>%
+      as.data.frame()
+#+END_SRC
+
+As always, full code is provided in the [[*Pulling Data from Dept of Health][appendix]].
+
+[fn:3] http://www.floridatracking.com/HealthTrackFL/default.aspx
+
+[fn:4] http://www.floridacharts.com/flquery/population/populationrpt.aspx
+
+** Rates for United Healthcare
+
+The following code uses the ~glmnet~ library to fit a cross-validated lasso regression of United rating factors on all available public health data.  A table of non-zero regression coefficients immediately follows the code.
+
+#+NAME: united-lasso
+#+BEGIN_SRC R :exports code
+  library(glmnet)
+
+  X.United <- model.matrix(United ~ . - BCBSFL, normalized.data)
+  Y.United <- model.frame(United ~ . - BCBSFL, normalized.data) %>% model.response()
+  coef.United <- cv.glmnet(X.United, Y.United, nfolds=nrow(normalized.data)) %>%
+      coef(s="lambda.1se")
+#+END_SRC
+
+#+NAME: united-desparse
+#+HEADERS: :results replace table :rownames yes :colnames '("Term" "Coefficient") :tangle no
+#+BEGIN_SRC R 
+  ## This function improves the presentation of sparse coefficient matrices.
+  deSparseCoef <- function(coef){return(coef[coef[, 1] != 0, , drop=FALSE])}
+
+  coef.United %>%
+      round(3) %>%
+      deSparseCoef() %>%
+      as.matrix()
+#+END_SRC
+
+#+CAPTION: United LASSO regression
+#+NAME: united-lasso-table
+#+RESULTS: united-desparse
+| Term                 | Coefficient |
+|----------------------+-------------|
+| cancer.bladder.2008  |      -0.034 |
+| cancer.breast50.2006 |      -0.013 |
+| cancer.kidney.2007   |      -0.017 |
+| cancer.liver.2007    |      -0.112 |
+| cancer.lymphoma.2007 |      -0.023 |
+| cancer.lymphoma.2011 |      -0.038 |
+| cancer.pancreas.2010 |      -0.089 |
+| salmonella.2012      |      -0.012 |
+
+We can’t directly interpret the magnitude of the coefficients, unfortunately, because we normalized the regression variables.  The negative signs, though, mean higher incidence of these conditions are predicting lower county rating factors.
+
+Let me repeat that: some *higher* cancer rates in the late 2000s are predicting *lower* health insurance rates in 2016.
+
+This defies naive causal intuition—why would a health insurer respond to increased cancer risk with lower rates?—so let’s dive deeper into the numbers.
+
+Since three predictive cancer variables are from 2007, let’s see the overall cancer incidence by county from that year.
+
+#+NAME: united-outlier-1
+#+HEADERS: :results replace graphics :rownames no :colnames no :tangle final-project-graphics.R
+#+BEGIN_SRC R :file united-outlier-1.png
+  df.to.graph <- florida.tracking.summ %>%
+      select(County, matches("cancer.*2007")) %>%
+      melt(id.vars="County")
+
+  union.to.graph <- filter(df.to.graph, County == "union")
+
+  ggplot(df.to.graph, aes(x=variable, y=value)) +
+      geom_bar(stat="identity") +
+      geom_bar(data=union.to.graph, stat="identity", fill="red") +
+      facet_wrap(~ County) +
+      theme(axis.ticks=element_blank(), axis.text.x=element_blank()) +
+      labs(title="Age-Adjusted Cancer Incidence, 2007",
+           x="Various Cancers",
+           y="Incidence / 100,000")
+#+END_SRC
+
+#+RESULTS: united-outlier-1
+[[file:united-outlier-1.png]]
+
+I’ve highlighted Union as a clear outlier, with higher-than-average incidence rates across many cancers, especially of the lung.  Union county may be an outlier because it has the greatest proportion of males in its population.  Sadly, age-and-sex-adjusted cancer rates were too hard to come by for this analysis.
+
+Now let’s see United’s rate relativities by county.
+
+#+NAME: united-outlier-2
+#+HEADERS: :results replace graphics :rownames no :colnames no :tangle final-project-graphics.R
+#+BEGIN_SRC R :file united-outlier-2.png
+  df.to.graph <- florida.county.factors
+
+  union.to.graph <- filter(df.to.graph, County == "union")
+
+  ggplot(df.to.graph, aes(x=County, y=United)) +
+      geom_point() +
+      geom_point(data=union.to.graph, color="red", size=3) +
+      geom_text(data=union.to.graph, label="Union", color="Red", hjust=1.3) +
+      theme(axis.text.x=element_text(angle=45, hjust=1, vjust=1)) +
+      labs(title="Rate Relativities by County, United",
+           y="Area Rating Factors",
+           x=NULL)
+#+END_SRC
+
+#+RESULTS: united-outlier-2
+[[file:united-outlier-2.png]]
+
+Again, I’ve highlighted Union county as a clear outlier.  
+
+# Include this code for reference, but don’t actually export or display it.
+#+NAME: united-lasso-null
+#+HEADERS: :results replace table :rownames yes :colnames '("Term" "Coefficient") :tangle no
+#+BEGIN_SRC R :exports none
+  library(glmnetUtils)
+
+
+  list(florida.county.factors,
+       florida.tracking.summ,
+       florida.demo.summ) %>%
+      Reduce(f=function(x, y){merge(x, y, by="County")}) %>%
+      (function(data) {
+          cancer.cols <- grep("cancer", colnames(data))
+          union.row <- grep("union", data$County)
+          data[union.row, cancer.cols] <- NA
+          return(data)
+      }) %>% 
+      select(BCBSFL, United, matches("[[:digit:]]{4}")) %>%
+      lapply(FUN=function(col) {
+          tmp <- col + min(0, col, na.rm=TRUE) + sd(col, na.rm=TRUE) / 10
+          ret <- BoxCoxTrans(tmp, na.rm=TRUE) %>% predict(tmp)
+          ret[is.na(ret)] <- mean(ret, na.rm=TRUE)
+          return(ret)
+      }) %>%
+      data.frame() %>%
+      scale() %>%
+      as.data.frame() %>%
+      (function(data) {
+          return(glmnetUtils::cv.glmnet(United ~ . - BCBSFL, data, nfolds=nrow(data)))
+      }) %>%
+      coef(s="lambda.1se") %>%
+      round(3) %>%
+      deSparseCoef() %>%
+      as.matrix()
+#+END_SRC
+
+#+RESULTS: united-lasso-null
+| Term | Coefficient |
+|------+-------------|
+
+As a matter of fact, when we drop Union’s cancer incidence from the data and re-run the lasso [[final-project-united-lasso][above]], /no regression terms remain/.  I conclude that there is not much predictive power to be found in the available health and demographic factors, and that [[united-lasso-table][Table 1]] shows spurious correlations driven by Union County.
+
+** Rates for Blue Cross Blue Shield of Florida
+
+Wait for it…
+
+…
+
+…
+
+Surprisingly to this author, the data tells the same story for BCBSFL.  When we fit a lasso using similar [[final-project-united-lasso][code]], /mutatis mutandis/, we see the following regression terms.
+
+#+NAME: bcbsfl-lasso
+#+BEGIN_SRC R
+  X.BCBSFL <- model.matrix(BCBSFL ~ . - United, normalized.data)
+  Y.BCBSFL <- model.frame(BCBSFL ~ . - United, normalized.data) %>% model.response()
+  coef.BCBSFL <- cv.glmnet(X.BCBSFL, Y.BCBSFL, nfolds=nrow(normalized.data)) %>%
+      coef(s="lambda.1se")
+#+END_SRC
+
+#+NAME: bcbsfl-desparse
+#+HEADERS: :results replace table :rownames yes :colnames '("Term" "Coefficient") :tangle no
+#+BEGIN_SRC R 
+  coef.BCBSFL %>%
+      round(3) %>%
+      deSparseCoef() %>%
+      as.matrix()
+#+END_SRC
+
+#+CAPTION: BCBSFL LASSO regression
+#+NAME: bcbsfl-lasso-table
+#+RESULTS: bcbsfl-desparse
+| Term                       | Coefficient |
+|----------------------------+-------------|
+| birth.low.weight.2005      |      -0.051 |
+| birth.low.weight.2010      |      -0.109 |
+| birth.preterm.2013         |       0.192 |
+| birth.very.low.weight.2008 |      -0.214 |
+| birth.very.low.weight.2010 |       0.138 |
+| birth.very.preterm.2014    |      -0.116 |
+| cancer.brain.2011          |       0.027 |
+| cancer.breast50.2003       |        0.13 |
+| cancer.breast50.2004       |       0.068 |
+| cancer.breast50.2006       |       -0.02 |
+| cancer.kidney.2007         |      -0.033 |
+| cancer.leukemia.2009       |       0.109 |
+| cancer.liver.2004          |       0.125 |
+| cancer.lung.2007           |       -0.14 |
+| cancer.lung.2008           |      -0.028 |
+| cancer.lung.2010           |      -0.299 |
+| cancer.lymphoma.2005       |       0.005 |
+| cancer.melanoma.2010       |       0.043 |
+| cancer.mesothelioma.2003   |       0.099 |
+| cancer.pancreas.2004       |       0.014 |
+| cancer.thyroid.2007        |       0.058 |
+| ecoli.2005                 |       0.076 |
+| ecoli.2008                 |       0.181 |
+| heart.er.2010              |       0.106 |
+| poverty5.2010              |      -0.025 |
+| poverty65.2010             |       0.117 |
+| salmonella.2004            |      -0.018 |
+| pop.2014.Hispanic          |       0.004 |
+
+Yet, when we remove  Union’s cancer incidence, *all regression terms vanish*.
+
+# Include this code for reference, but don’t actually export or disply it anywhere.
+#+HEADERS: :results replace table :rownames yes :colnames '("Term" "Coefficient") :tangle no
+#+BEGIN_SRC R :exports none
+  library(glmnetUtils)
+
+
+  list(florida.county.factors,
+       florida.tracking.summ,
+       florida.demo.summ) %>%
+      Reduce(f=function(x, y){merge(x, y, by="County")}) %>%
+      ## filter(County != "union") %>%
+      (function(data) {
+          cancer.cols <- grep("cancer", colnames(data))
+          union.row <- grep("union", data$County)
+          data[union.row, cancer.cols] <- NA
+          return(data)
+      }) %>% 
+      select(BCBSFL, United, matches("[[:digit:]]{4}")) %>%
+      lapply(FUN=function(col) {
+          tmp <- col + min(0, col, na.rm=TRUE) + sd(col, na.rm=TRUE) / 10
+          ret <- BoxCoxTrans(tmp, na.rm=TRUE) %>% predict(tmp)
+          ret[is.na(ret)] <- mean(ret, na.rm=TRUE)
+          return(ret)
+      }) %>%
+      data.frame() %>%
+      scale() %>%
+      as.data.frame() %>%
+      (function(data) {
+          return(glmnetUtils::cv.glmnet(BCBSFL ~ . - United, data, nfolds=nrow(data)))
+      }) %>%
+      coef(s="lambda.1se") %>%
+      round(5) %>%
+      deSparseCoef() %>%
+      as.matrix()
+#+END_SRC
+
+#+RESULTS:
+| Term | Coefficient |
+|------+-------------|
+
+** Conclusion
+
+I will be the first to admit that this null result surprises me so powerfully, I smell a problem with the analysis.  However, I’ve reviewed my assumptions, broken out my intermediate steps, and heeded the advice of the data science experts at [[http://signaldatascience.com/][Signal]].  Full modeling code is available in the [[*Modeling Relativities with the Lasso][appendix]] for all to see.  At this point, I must conclude that the rates of major health insurers simply do not vary in a predictable way with local health profiles.  At least for these two companies in Florida.
+
+So what *does* drive the variance in prices?  Well, stay tuned for Part 2, and have a look at this graph in the meantime:
+
+#+NAME: bcbsfl-map
+#+HEADERS: :results replace graphics :rownames no :colnames no :tangle final-project-graphics.R
+#+BEGIN_SRC R :file bcbsfl-map.png
+  library(maps)
+
+
+  map.data.df <- map_data("county", "florida") %>%
+      select(x=long, y=lat, id=subregion)
+
+  map.data.df$id <- map.data.df$id %>%
+      tolower() %>%
+      lapply(FUN=function(cnty){
+          return(switch(cnty,
+                        "de soto"="desoto",
+                        "st johns"="st. johns",
+                        "st lucie"="st. lucie",
+                        cnty))
+      }) %>%
+      as.character()
+
+  ggplot(florida.county.factors, aes(map_id=County)) +
+      geom_map(aes(fill=BCBSFL), map=map.data.df) +
+      expand_limits(map.data.df) +
+      theme(axis.ticks=element_blank(),
+            axis.text=element_blank(),
+            panel.background=element_blank(),
+            legend.title=element_blank()) +
+      scale_fill_gradientn(colors=wes_palette("Zissou", 100, "continuous")) +
+      labs(x=NULL, y=NULL, title="Rate Relativities by County (BCBSFL)")
+#+END_SRC
+
+#+RESULTS: bcbsfl-map
+[[file:bcbsfl-map.png]]
+
+* Appendix: Code
+:PROPERTIES:
+:header-args+: :exports code :eval no
+:header-args:R+: :tangle no
+:header-args:sqlite+: :tangle no
+:header-args:latex+: :tangle no
+:END:
+** Pulling Data from Kaggle
+
+The Kaggle datasets[fn:2] are huge; this =SQL= grabs just the rows we want.  It takes a while to run on my laptop, so I save the results to csv.
+
+#+BEGIN_SRC sqlite
+  <<get-rate-data>>
+#+END_SRC
+
+And now with a little =R= we’re ready to analyze the data.  Note that the code uses a global variable, ~csv_filename~, defined separately to point to the previous results.
+
+#+BEGIN_SRC R 
+  <<read-rate-data>>
+#+END_SRC
+
+** Fitting the Models
+
+The following code extracts the plan, county, and age effects for each of the ten insurance issuers in Florida and builds a dataframe of the results.
+
+#+BEGIN_SRC R 
+<<fit-models>>
+#+END_SRC
+
+From these results, we construct retrodictions of the individual rate at the plan-county-age-issuer level.
+
+#+BEGIN_SRC R 
+  <<build-predictions>>
+#+END_SRC
+
+** Pulling Data from Dept of Health
+
+The Florida Department of Health datasets[fn:3][fn:4] come in Excel spreadsheet format.  Downloaded files were exported to csv and given standardized names.  Sorry there’s no script for this part.
+
+#+BEGIN_SRC R 
+  <<get-rating-factors>>
+
+  <<get-demo-data>>
+
+  <<get-tracking-data>>
+
+  <<normalize-data>>
+#+END_SRC
+
+** Modeling Relativities with the Lasso
+
+This code to fit a cross-validated lasso regression was given [[final-project-united-lasso][above]].  This time I’ve also included the lines to massage the output for presentation.
+
+#+BEGIN_SRC R 
+  <<united-lasso>>
+
+  <<united-desparse>>
+#+END_SRC
+
+Additionally, I am proud of the graphs highlighting Union’s outlier status.  Here’s the code for first.
+
+#+BEGIN_SRC R 
+<<united-outlier-1>>
+#+END_SRC
+
+And for the second.
+
+#+BEGIN_SRC R 
+<<united-outlier-2>>
+#+END_SRC
+
+This last snippet I’m simultaneously proud and ashamed to say I wrote.  One long pipeline to calculate the lasso of the normalized data after removing Union County’s cancer incidence rates.  A big shout-out to the [[https://github.com/Hong-Revo/glmnetUtils][glmnetUtils]] package for fitting ~cv.glmnet~ in one line.  The final coefficient matrix is empty.
+
+#+BEGIN_SRC R 
+<<united-lasso-null>>
+#+END_SRC
+
