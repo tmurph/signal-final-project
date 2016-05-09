@@ -3,7 +3,7 @@
 #+AUTHOR: Trevor Murphy
 #+EMAIL: trevor.m.murphy@gmail.com
 
-#+OPTIONS: num:nil toc:nil tasks:nil
+#+OPTIONS: num:nil toc:nil tasks:nil tex:dvipng
 
 #+PROPERTY: header-args+ :noweb yes :exports results
 #+PROPERTY: header-args:R+ :session *R* :results none :tangle final-project.R

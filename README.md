@@ -143,18 +143,22 @@ Here’s the head of the `R` dataframe.  The actual `SQL` and `R` code is provid
 
 ## Rate Data Model
 
-Actuaries may model insurance rates as a product of various factors, with each factor determined by analysis of company data.  A typical formula for the rate \(R_{ijkl}\) of plan \(P_i\) in county \(C_j\) for subscribers age \(A_k\) on insurance carrier \(I_l\) might look like this.
+Actuaries may model insurance rates as a product of various factors, with each factor determined by analysis of company data.  A typical formula for the rate <img src="ltxpng/final-project_d06b6186c884bce86dcb341a6d3f844a83adcf19.png" alt="$R_{ijkl}$" /> of plan <img src="ltxpng/final-project_6275707615087c6f78d7570e1be58b405c0232b1.png" alt="$P_i$" /> in county <img src="ltxpng/final-project_5855604b306eac01a09bd99c77b9491ff644cdcd.png" alt="$C_j$" /> for subscribers age <img src="ltxpng/final-project_b1f8a27511c63b2d5e2dc8b0717af72ece044e7c.png" alt="$A_k$" /> on insurance carrier <img src="ltxpng/final-project_702b4499131ccb13225ee43bebba01f8804dd3de.png" alt="$I_l$" /> might look like this.
 
-\begin{equation}
+
+<div class="figure">
+<p><img src="ltxpng/final-project_e8d3c36357771332692e611baf88337ff979a626.png" alt="\begin{equation}
   \begin{split}
-    R_{ijkl} = & PlanFactor_i * \\
-    & CountyFactor_j * \\
-    & AgeFactor_k * \\
-    & BaseRate_l * TobaccoLoad_l * ProfitLoad_l
+    R_{ijkl} = &amp;amp; PlanFactor_i * \\
+    &amp;amp; CountyFactor_j * \\
+    &amp;amp; AgeFactor_k * \\
+    &amp;amp; BaseRate_l * TobaccoLoad_l * ProfitLoad_l
   \end{split}
 \end{equation}
+" /></p>
+</div>
 
-After taking logs of both sides, \(log(R_{ijkl})\) is expressed as the sum of fixed effects by plan, county, subscriber age, and insurance carrier.  For each insurance carrier we’ll fit such a model with the `lfe` package.  Here’s the relevant code.
+After taking logs of both sides, <img src="ltxpng/final-project_94666aac79ed965076d926775f609e464caa5cfd.png" alt="$log(R_{ijkl})$" /> is expressed as the sum of fixed effects by plan, county, subscriber age, and insurance carrier.  For each insurance carrier we’ll fit such a model with the `lfe` package.  Here’s the relevant code.
 
 ```R
 library(lfe)
@@ -180,7 +184,7 @@ effects.df <- levels(df$IssuerName) %>%
     do.call(what=rbind)
 ```
 
-The `effects.df` dataframe needs additional massaging to extract retrodictions of the individual rates, \(R_{ijkl}\), but I’m eliding that here.  Full working code is provided in the [appendix](#orgheadline3).
+The `effects.df` dataframe needs additional massaging to extract retrodictions of the individual rates, <img src="ltxpng/final-project_d06b6186c884bce86dcb341a6d3f844a83adcf19.png" alt="$R_{ijkl}$" />, but I’m eliding that here.  Full working code is provided in the [appendix](#orgheadline3).
 
 Now let’s see that the fixed effects model does, in fact, accurately describe the data. Here’s a plot of rate data for BCBSFL for a few sampled plans and counties.
 
@@ -210,7 +214,7 @@ We can also see this result graphically.
 
 Voilà!  The two sets of effects do correlate a bit, but with plenty of variation left to explain.  In particular, careful observation indicates that United factors cluster around the mean with three outliers, while BCBSFL factors show more dispersion.
 
-To understand that remaining variation, let’s pull down Floridian public health data by county and fit regularized linear models for each set of factors.  I’ll use \(l_1\) / lasso regularization, because in each case I want to isolate those few data variables that are most strongly predictive of the rating factors.
+To understand that remaining variation, let’s pull down Floridian public health data by county and fit regularized linear models for each set of factors.  I’ll use <img src="ltxpng/final-project_3360aa077be17769b4d4c15f184751cd5959e9d2.png" alt="$l_1$" /> / lasso regularization, because in each case I want to isolate those few data variables that are most strongly predictive of the rating factors.
 
 ## Public Health Data
 
