@@ -2,3 +2,4 @@ health-insurance-marketplace/
 *.xls
 *.html
 *.pdf
+!*.png
