@@ -5,7 +5,7 @@
 
 #+OPTIONS: num:nil toc:nil tasks:nil
 
-#+PROPERTY: header-args :noweb yes :exports results
+#+PROPERTY: header-args+ :noweb yes :exports results
 #+PROPERTY: header-args:R+ :session *R* :results none :tangle final-project.R
 #+PROPERTY: header-args:R+ :width 800 :res 100
 #+PROPERTY: header-args:sqlite+ :eval never :tangle final-project.sqlite.script
@@ -650,7 +650,7 @@ Again, I’ve highlighted Union county as a clear outlier.
 | Term | Coefficient |
 |------+-------------|
 
-As a matter of fact, when we drop Union’s cancer incidence from the data and re-run the lasso [[final-project-united-lasso][above]], /no regression terms remain/.  I conclude that there is not much predictive power to be found in the available health and demographic factors, and that [[united-lasso-table][Table 1]] shows spurious correlations driven by Union County.
+As a matter of fact, when we drop Union’s cancer incidence from the data and re-run the lasso [[united-lasso][above]], /no regression terms remain/.  I conclude that there is not much predictive power to be found in the available health and demographic factors, and that [[united-lasso-table][Table 1]] shows spurious correlations driven by Union County.
 
 ** Rates for Blue Cross Blue Shield of Florida
 
@@ -660,7 +660,7 @@ Wait for it…
 
 …
 
-Surprisingly to this author, the data tells the same story for BCBSFL.  When we fit a lasso using similar [[final-project-united-lasso][code]], /mutatis mutandis/, we see the following regression terms.
+Surprisingly to this author, the data tells the same story for BCBSFL.  When we fit a lasso using similar [[united-lasso][code]], /mutatis mutandis/, we see the following regression terms.
 
 #+NAME: bcbsfl-lasso
 #+BEGIN_SRC R
@@ -846,7 +846,7 @@ The Florida Department of Health datasets[fn:3][fn:4] come in Excel spreadsheet 
 
 ** Modeling Relativities with the Lasso
 
-This code to fit a cross-validated lasso regression was given [[final-project-united-lasso][above]].  This time I’ve also included the lines to massage the output for presentation.
+This code to fit a cross-validated lasso regression was given [[united-lasso][above]].  This time I’ve also included the lines to massage the output for presentation.
 
 #+BEGIN_SRC R 
   <<united-lasso>>
