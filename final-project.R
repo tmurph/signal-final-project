@@ -1,11 +1,10 @@
-sql_results_file <- "rate-data.csv"
 library(readr)
 library(dplyr)
 
 
 ## The rate data includes many fields we don't need for this analysis.
 ## Select just the rates by plan, county, age, and issuer.
-df <- read_csv(sql_results_file) %>%
+df <- read_csv("data/rate-data.csv") %>%
     select(c(IndividualRate,                                 
              PlanId,                        
              RatingAreaId,                                   
@@ -105,7 +104,6 @@ df2$index <- df2 %>%
 data.with.predict <- left_join(df2, agg.df, by="index") %>%
     select(-c(index))
 
-rating_area_file <- "govt-rating-areas.csv"
 library(reshape2)
 
 ## The csv referenced in this code contains the federally specified mapping of
@@ -113,7 +111,7 @@ library(reshape2)
 florida.county.factors <- effects.df %>%
     filter(fe == "RatingAreaId") %>%
     dcast(idx ~ issuer, value.var="effect") %>%
-    merge(y=read_csv(rating_area_file),
+    merge(y=read_csv("data/govt-rating-areas.csv"),
           by.x="idx", by.y="Rating Area ID", all=T)
 
 ## All counties are (by construction) spelled canonically in this data.
@@ -125,32 +123,32 @@ florida.county.factors$County <- florida.county.factors$County %>%
 ## Environmental Public Health Tracking website:
 ## http://www.floridatracking.com/HealthTrackFL/default.aspx
 
-florida.tracking.files <- c("fl-track-birth-low-weight.csv",
-                            "fl-track-birth-preterm.csv",
-                            "fl-track-birth-very-low-weight.csv",
-                            "fl-track-birth-very-preterm.csv",
-                            "fl-track-cancer-bladder.csv",
-                            "fl-track-cancer-brain.csv",
-                            "fl-track-cancer-breast49.csv",
-                            "fl-track-cancer-breast50.csv",
-                            "fl-track-cancer-kidney.csv",
-                            "fl-track-cancer-leukemia.csv",
-                            "fl-track-cancer-liver.csv",
-                            "fl-track-cancer-lung.csv",
-                            "fl-track-cancer-lymphoma.csv",
-                            "fl-track-cancer-melanoma.csv",
-                            "fl-track-cancer-mesothelioma.csv",
-                            "fl-track-cancer-pancreas.csv",
-                            "fl-track-cancer-thyroid.csv",
-                            "fl-track-ecoli.csv",
-                            "fl-track-heart-er.csv",
-                            "fl-track-heart-hosp.csv",
-                            "fl-track-obesity.csv",
-                            "fl-track-poverty5.csv",
-                            "fl-track-poverty65.csv",
-                            "fl-track-salmonella.csv",
-                            "fl-track-self-report.csv",
-                            "fl-track-smoke2.csv")
+florida.tracking.files <- c("data/fl-track-birth-low-weight.csv",
+                            "data/fl-track-birth-preterm.csv",
+                            "data/fl-track-birth-very-low-weight.csv",
+                            "data/fl-track-birth-very-preterm.csv",
+                            "data/fl-track-cancer-bladder.csv",
+                            "data/fl-track-cancer-brain.csv",
+                            "data/fl-track-cancer-breast49.csv",
+                            "data/fl-track-cancer-breast50.csv",
+                            "data/fl-track-cancer-kidney.csv",
+                            "data/fl-track-cancer-leukemia.csv",
+                            "data/fl-track-cancer-liver.csv",
+                            "data/fl-track-cancer-lung.csv",
+                            "data/fl-track-cancer-lymphoma.csv",
+                            "data/fl-track-cancer-melanoma.csv",
+                            "data/fl-track-cancer-mesothelioma.csv",
+                            "data/fl-track-cancer-pancreas.csv",
+                            "data/fl-track-cancer-thyroid.csv",
+                            "data/fl-track-ecoli.csv",
+                            "data/fl-track-heart-er.csv",
+                            "data/fl-track-heart-hosp.csv",
+                            "data/fl-track-obesity.csv",
+                            "data/fl-track-poverty5.csv",
+                            "data/fl-track-poverty65.csv",
+                            "data/fl-track-salmonella.csv",
+                            "data/fl-track-self-report.csv",
+                            "data/fl-track-smoke2.csv")
 
 ## Give the data frames meaningful names.
 florida.tracking.data <- Map(florida.tracking.files,
@@ -158,7 +156,7 @@ florida.tracking.data <- Map(florida.tracking.files,
                                  return(read_csv(file, na=c("", "NA", "*")))
                              })
 names(florida.tracking.data) <- florida.tracking.files %>%
-    gsub(pattern="^fl-track-", replacement="") %>%
+    gsub(pattern="^data/fl-track-", replacement="") %>%
     gsub(pattern=".csv$", replacement="") %>%
     gsub(pattern="-", replacement=".")
 
@@ -183,11 +181,11 @@ florida.tracking.summ$County <- florida.tracking.summ$County %>%
 ## FloridaCHARTS website:
 ## http://www.floridacharts.com/flquery/population/populationrpt.aspx
 
-florida.demo.files <- c("fl-demo-population.csv",
-                        "fl-demo-pop-age.csv",
-                        "fl-demo-pop-sex.csv",
-                        "fl-demo-pop-race.csv",
-                        "fl-demo-pop-ethnic.csv")
+florida.demo.files <- c("data/fl-demo-population.csv",
+                        "data/fl-demo-pop-age.csv",
+                        "data/fl-demo-pop-sex.csv",
+                        "data/fl-demo-pop-race.csv",
+                        "data/fl-demo-pop-ethnic.csv")
 
 ## Give the data frames meaningful names.
 florida.demo.data <- Map(florida.demo.files,
@@ -195,7 +193,7 @@ florida.demo.data <- Map(florida.demo.files,
                              return(read_csv(file, na=c("", "NA", "*")))
                          })
 names(florida.demo.data) <- florida.demo.files %>%
-    gsub(pattern="^fl-demo-", replacement="") %>%
+    gsub(pattern="^data/fl-demo-", replacement="") %>%
     gsub(pattern=".csv$", replacement="") %>%
     gsub(pattern="-", replacement=".")
 
