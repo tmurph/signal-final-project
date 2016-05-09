@@ -16,6 +16,7 @@ Note: *I am currently seeking employment as a Data Scientist in the Bay Area!*
  - [[mailto:trevor.m.murphy@gmail.com][trevor.m.murphy@gmail.com]]
  - [[https://www.linkedin.com/in/trevor-murphy-49ba1421][LinkedIn]]
  - [[https://github.com/tmurph][GitHub]]
+ - [[file:resume.pdf][Résumé]]
 
 * Data Analysis of Health Insurance in Florida
 :PROPERTIES:

@@ -3,3 +3,4 @@ health-insurance-marketplace/
 *.html
 *.pdf
 !*.png
+!resume.pdf
