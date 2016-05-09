@@ -323,7 +323,8 @@ Now let’s see that the fixed effects model does, in fact, accurately describe 
                          name=NULL) +
       scale_fill_manual(values=c(graph.colors[1], "white"),
                         labels=c("Published Rates", "Modeled Rates"),
-                        name=NULL)
+                        name=NULL) +
+      theme(legend.position="top")
 #+END_SRC
 
 #+RESULTS:

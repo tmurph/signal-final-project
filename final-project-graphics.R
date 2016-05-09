@@ -49,7 +49,8 @@ ggplot(df.to.graph, aes(x=AgeNum, y=value, color=variable, fill=variable)) +
                        name=NULL) +
     scale_fill_manual(values=c(graph.colors[1], "white"),
                       labels=c("Published Rates", "Modeled Rates"),
-                      name=NULL)
+                      name=NULL) +
+    theme(legend.position="top")
 
 ggplot(florida.county.factors, aes(x=scale(BCBSFL), y=scale(United))) +
     geom_point() + geom_smooth(method="lm") +
