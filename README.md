@@ -1,6 +1,6 @@
 Note: **I am currently seeking employment as a Data Scientist in the Bay Area!**
 
--   [trevor.m.murphy@gmail.com](trevor.m.murphy@gmail.com)
+-   [trevor.m.murphy@gmail.com](mailto:trevor.m.murphy@gmail.com)
 -   [LinkedIn](https://www.linkedin.com/in/trevor-murphy-49ba1421)
 -   [GitHub](https://github.com/tmurph)
 -   [Résumé](resume.pdf)
