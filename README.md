@@ -188,7 +188,7 @@ The `effects.df` dataframe needs additional massaging to extract retrodictions o
 
 Now let’s see that the fixed effects model does, in fact, accurately describe the data. Here’s a plot of rate data for BCBSFL for a few sampled plans and counties.
 
-![img](bcbsfl-feffects-check.png)
+![img](rpng/bcbsfl-feffects-check.png)
 
 What, a perfect fit?!  That’s actually expected, because there is no underlying uncertainty in the process that generated these published rates.  They were produced by humans following the simple [Formula 1](#orgdrawer1) above, so this plot demonstrates that we have accurately inferred the unpublished factors (the right hand side of the formula) from the published rates (the left hand side).
 
@@ -210,7 +210,7 @@ The estimated coefficient is significant at the 0.01 level, so it’s unlikely t
 
 We can also see this result graphically.
 
-![img](sanity-check.png)
+![img](rpng/sanity-check.png)
 
 Voilà!  The two sets of effects do correlate a bit, but with plenty of variation left to explain.  In particular, careful observation indicates that United factors cluster around the mean with three outliers, while BCBSFL factors show more dispersion.
 
@@ -315,13 +315,13 @@ This defies naive causal intuition—why would a health insurer respond to incre
 
 Since three predictive cancer variables are from 2007, let’s see the overall cancer incidence by county from that year.
 
-![img](united-outlier-1.png)
+![img](rpng/united-outlier-1.png)
 
 I’ve highlighted Union as a clear outlier, with higher-than-average incidence rates across many cancers, especially of the lung.  Union county may be an outlier because it has the greatest proportion of males in its population.  Sadly, age-and-sex-adjusted cancer rates were too hard to come by for this analysis.
 
 Now let’s see United’s rate relativities by county.
 
-![img](united-outlier-2.png)
+![img](rpng/united-outlier-2.png)
 
 Again, I’ve highlighted Union county as a clear outlier.  
 
@@ -530,7 +530,7 @@ I will be the first to admit that this null result surprises me so powerfully, I
 
 So what **does** drive the variance in prices?  Well, stay tuned for Part 2, and have a look at this graph in the meantime:
 
-![img](bcbsfl-map.png)
+![img](rpng/bcbsfl-map.png)
 
 # Appendix: Code
 

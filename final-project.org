@@ -272,7 +272,7 @@ Now let’s see that the fixed effects model does, in fact, accurately describe 
 
 #+HEADERS: :var side.length=2
 #+HEADERS: :results replace graphics :rownames no :colnames no :tangle final-project-graphics.R
-#+BEGIN_SRC R :file bcbsfl-feffects-check.png
+#+BEGIN_SRC R :file rpng/bcbsfl-feffects-check.png
   bcbsfl.with.predict <- filter(data.with.predict, IssuerName == "BCBSFL")
 
   some.areas <- bcbsfl.with.predict$RatingAreaId %>%
@@ -327,7 +327,7 @@ Now let’s see that the fixed effects model does, in fact, accurately describe 
 #+END_SRC
 
 #+RESULTS:
-[[file:bcbsfl-feffects-check.png]]
+[[file:rpng/bcbsfl-feffects-check.png]]
 
 What, a perfect fit?!  That’s actually expected, because there is no underlying uncertainty in the process that generated these published rates.  They were produced by humans following the simple [[actuarial-rating-formula][Formula 1]] above, so this plot demonstrates that we have accurately inferred the unpublished factors (the right hand side of the formula) from the published rates (the left hand side).
 
@@ -386,14 +386,14 @@ The estimated coefficient is significant at the 0.01 level, so it’s unlikely t
 We can also see this result graphically.
 
 #+HEADERS: :results replace graphics :rownames no :colnames no :tangle final-project-graphics.R
-#+BEGIN_SRC R :file sanity-check.png
+#+BEGIN_SRC R :file rpng/sanity-check.png
   ggplot(florida.county.factors, aes(x=scale(BCBSFL), y=scale(United))) +
       geom_point() + geom_smooth(method="lm") +
       ggtitle("Linear Regression of County Factors, United on BCBSFL")
 #+END_SRC
 
 #+RESULTS:
-[[file:sanity-check.png]]
+[[file:rpng/sanity-check.png]]
 
 Voilà!  The two sets of effects do correlate a bit, but with plenty of variation left to explain.  In particular, careful observation indicates that United factors cluster around the mean with three outliers, while BCBSFL factors show more dispersion.
 
@@ -603,7 +603,7 @@ Since three predictive cancer variables are from 2007, let’s see the overall c
 
 #+NAME: united-outlier-1
 #+HEADERS: :results replace graphics :rownames no :colnames no :tangle final-project-graphics.R
-#+BEGIN_SRC R :file united-outlier-1.png
+#+BEGIN_SRC R :file rpng/united-outlier-1.png
   df.to.graph <- florida.tracking.summ %>%
       select(County, matches("cancer.*2007")) %>%
       melt(id.vars="County")
@@ -621,7 +621,7 @@ Since three predictive cancer variables are from 2007, let’s see the overall c
 #+END_SRC
 
 #+RESULTS: united-outlier-1
-[[file:united-outlier-1.png]]
+[[file:rpng/united-outlier-1.png]]
 
 I’ve highlighted Union as a clear outlier, with higher-than-average incidence rates across many cancers, especially of the lung.  Union county may be an outlier because it has the greatest proportion of males in its population.  Sadly, age-and-sex-adjusted cancer rates were too hard to come by for this analysis.
 
@@ -629,7 +629,7 @@ Now let’s see United’s rate relativities by county.
 
 #+NAME: united-outlier-2
 #+HEADERS: :results replace graphics :rownames no :colnames no :tangle final-project-graphics.R
-#+BEGIN_SRC R :file united-outlier-2.png
+#+BEGIN_SRC R :file rpng/united-outlier-2.png
   df.to.graph <- florida.county.factors
 
   union.to.graph <- filter(df.to.graph, County == "union")
@@ -645,7 +645,7 @@ Now let’s see United’s rate relativities by county.
 #+END_SRC
 
 #+RESULTS: united-outlier-2
-[[file:united-outlier-2.png]]
+[[file:rpng/united-outlier-2.png]]
 
 Again, I’ve highlighted Union county as a clear outlier.  
 
@@ -808,7 +808,7 @@ So what *does* drive the variance in prices?  Well, stay tuned for Part 2, and h
 
 #+NAME: bcbsfl-map
 #+HEADERS: :results replace graphics :rownames no :colnames no :tangle final-project-graphics.R
-#+BEGIN_SRC R :file bcbsfl-map.png
+#+BEGIN_SRC R :file rpng/bcbsfl-map.png
   library(maps)
 
 
@@ -838,7 +838,7 @@ So what *does* drive the variance in prices?  Well, stay tuned for Part 2, and h
 #+END_SRC
 
 #+RESULTS: bcbsfl-map
-[[file:bcbsfl-map.png]]
+[[file:rpng/bcbsfl-map.png]]
 
 * Appendix: Code
 :PROPERTIES:
