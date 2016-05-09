@@ -1,0 +1,7 @@
+* Data Analysis of Health Insurance in Florida
+
+This repository contains the code and resources for my final project for [[http://signaldatascience.com/][Signal Data Science, Spring 2016 Cohort]].  
+
+Via [[https://www.kaggle.com/hhsgov/health-insurance-marketplace][Kaggle]], I study the published health insurance rates made available from the Centers for Medicare and Medicaid Services.  I infer the underlying rating model using linear fixed effects modeling, then I look for drivers of rating variability among public health and demographics data using cross-validated lasso regression.  
+
+Surprisingly, /no/ non-trivial correlations are found between insurance rates and any of the available data.  I discuss the practical implications of this null result.
